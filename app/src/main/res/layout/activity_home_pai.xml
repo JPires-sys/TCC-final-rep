@@ -68,6 +68,14 @@
                     android:drawableStart="@android:drawable/ic_menu_search"
                     android:drawablePadding="8dp" />
 
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Usa o tempo de tela e o histórico recente do Chatbox dos jovens vinculados."
+                    android:textSize="12sp"
+                    android:textColor="@color/slate_700" />
+
                 <EditText
                     android:id="@+id/edtPesquisaIA"
                     android:layout_width="match_parent"

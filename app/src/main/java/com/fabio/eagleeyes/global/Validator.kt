@@ -53,21 +53,14 @@ object Validator {
     }
 
     fun validarCPF(inputLayout: TextInputLayout): Boolean {
-        val cpf = inputLayout.editText?.text.toString().trim()
-        // Validação simples de tamanho, pode ser expandida para algoritmo real de CPF
-        return when {
-            cpf.isEmpty() -> {
-                inputLayout.error = "CPF é obrigatório"
-                false
-            }
-            cpf.length != 11 -> {
-                inputLayout.error = "CPF deve ter 11 dígitos"
-                false
-            }
-            else -> {
-                inputLayout.error = null
-                true
-            }
-        }
+        val error = com.fabio.eagleeyes.cadastro.RegistrationValidation.cpfError(inputLayout.editText?.text.toString())
+        inputLayout.error = error
+        return error == null
+    }
+
+    fun validarTelefone(inputLayout: TextInputLayout): Boolean {
+        val error = com.fabio.eagleeyes.cadastro.RegistrationValidation.phoneError(inputLayout.editText?.text.toString())
+        inputLayout.error = error
+        return error == null
     }
 }

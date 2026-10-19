@@ -1,54 +1,66 @@
 # Vínculos e Chatbox no Realtime Database
 
-O app usa o projeto do `app/google-services.json`. Não é necessário instalar o APK da pasta Chatbox.
+O app usa o projeto de `app/google-services.json` e a conta do Firebase Authentication.
 
-## Estrutura
+## Conversas: armazenamento local e envio ao sair
 
-- `usuarios/pais/{uid}` e `usuarios/filhos/{uid}`: a chave é o UID do Firebase Authentication.
-- `usuarios/filhos/{uid}/idResponsavel`: UID do responsável; pode estar ausente antes do vínculo.
-- `chatbox/{uidDoFilho}/mensagens/{id}`: `id`, `role` (`user` ou `assistant`), `content` e `createdAt` (horário do servidor em milissegundos).
+- Enquanto a tela está aberta, mensagens e rascunho são gravados em um arquivo privado por UID em `noBackupFilesDir/chatbox`. A gravação atômica mantém a última cópia completa se houver interrupção.
+- Ao voltar à tela após rotação ou encerramento do processo, a mesma sessão local é recuperada, inclusive após sair normalmente pelo botão Voltar. A cópia ativa continua no aparelho após o envio ao banco; na próxima saída, o mesmo ID é atualizado. Sem cópia ativa, o app tenta retomar a última conversa pendente ou salva no banco. Uma pergunta que ficou sem resposta pode ser retomada pela IA.
+- Ao tocar em **Voltar** ou usar o retorno do Android, a chamada pendente da IA é cancelada e a sessão completa é marcada localmente para envio. Somente então o Firebase recebe a conversa.
+- Caminho: `historicoChat/{uid}/{yyyy-MM-dd}/{idConversa}`. A data é a data local de início da sessão; cruzar a meia-noite não muda esse agrupamento. Cada sessão tem um UUID, portanto duas conversas no mesmo dia não se sobrescrevem.
+- Campos: `id`, `date`, `startedAt`, `endedAt` e `mensagens/{id}` com `id`, `role`, `content` e `createdAt`. Horários são os do aparelho em milissegundos. Os IDs sequenciais preservam a ordem das mensagens. Texto digitado que ainda não foi enviado não é transmitido como mensagem.
+- A cópia pendente só é removida do aparelho após confirmação do banco. A tentativa usa o mesmo caminho e os mesmos dados, evitando duplicação quando o servidor salvou mas a confirmação se perdeu.
+- Se não houver conexão ou permissão, a tela oferece **Tentar novamente** ou **Sair com cópia local**. Pendências são reenviadas na próxima saída. Fechar pelo botão Home ou encerrar o processo não dispara envio: mantém a sessão local.
+- **Histórico por data** lê até 30 datas por página e permite carregar datas anteriores. Conversas pendentes também aparecem, identificadas como locais. Abrir um registro não o mistura à conversa atual nem o envia ao Gemini.
+- As conversas só ficam visíveis em outro aparelho depois do envio confirmado. Desinstalar o app ou limpar seus dados remove cópias que ainda não foram enviadas.
 
-A tela inicia uma conversa nova a cada abertura e pede ao Gemini uma mensagem para o dia, sem consultar o perfil ou o histórico no Firebase. Não há agendamento nem limite de uma geração por dia. A abertura é exibida sem depender do banco; ao enviar a primeira mensagem, o app arquiva também essa abertura com uma chave única por conversa. O histórico antigo permanece no banco, mas não é recuperado na tela nem enviado à IA. A API recebe até 40 mensagens da sessão atual, além das instruções do Chatbox.
+## Mensagem diária e tempo de tela
 
-A gravação da mensagem do jovem é confirmada antes da chamada à IA, e as respostas seguintes só são exibidas depois de confirmadas no Firebase. Se a conexão cair, o botão Tentar novamente reutiliza as mesmas chaves durante a sessão. Reabrir a tela ou reiniciar o processo começa outra conversa; não retoma perguntas antigas. As transações de gravação ainda precisam de permissão de leitura e escrita na mensagem correspondente, mas não consultam a lista do histórico.
+O Chatbox usa `GeminiConfig.getBackendUrl()`, o mesmo backend das análises do app. A mensagem diária é guardada por conta e data neste aparelho. Retomar uma conversa existente mantém as mensagens, sem gerar outra abertura. O cache diário é utilizado quando uma abertura nova é necessária.
 
-## Regras
+Em um dia a cada três (escolha estável por data e UID), o app consulta `historicoUso/{uid}/{yyyy-MM-dd}/{pacoteComUnderscores}`, dos últimos sete dias. Os valores já são minutos, conforme `MonitoramentoService`. O resumo agrega os cinco aplicativos com maior uso registrado e é enviado ao Gemini como contexto apenas para a abertura. Não transforma automaticamente uso elevado em diagnóstico ou problema. Sem dados, conexão ou permissão, a consulta expira em oito segundos e a pergunta é geral. Nos demais dias não consulta o tempo de tela.
 
-`database.rules.fragment.json` é um **fragmento para integrar às regras atuais**, não um substituto completo das regras do projeto. Não foi publicado no Firebase. Preserve as regras de cadastro, regras de uso, alertas e demais funcionalidades ao fazer a integração. Mescle os índices, sem apagar índices existentes.
+Durante o diálogo, o Gemini recebe até 40 mensagens da sessão atual. Não envia conversas anteriores consultadas pelo histórico. Erros HTTP ou respostas inválidas não são armazenados como falas da IA.
 
-As regras de leitura e gravação do banco ativo não estão versionadas neste repositório. Revise as permissões nos nós ancestrais antes de publicar: uma permissão ampla de leitura/gravação em `/`, `/usuarios` ou `/chatbox` também permite acesso aos descendentes e não é restringida por uma regra mais interna. As regras de criação de perfil devem permitir somente a criação da própria conta autenticada e impedir mudança de papel. Não conceda escrita irrestrita sobre perfis de outras contas.
+## Regras e caminho corrigido
 
-O fragmento permite que cada jovem leia/escreva seu chat e que o responsável consulte filhos usando `orderByChild('idResponsavel').equalTo(auth.uid)`. A leitura de `nome` por ID permite verificar a conta de destino sem abrir o perfil inteiro. O vínculo é criado por uma das duas contas autenticadas e não troca um responsável já associado. Repetir o mesmo vínculo é permitido. Não foi adicionada uma tela de leitura do chat pelo responsável.
+As regras fornecidas pelo usuário em 16/10/2026 já permitem leitura e escrita a usuários autenticados em `historicoChat` e `historicoUso`. O erro anterior ocorria porque o código usava `chatbox`, caminho sem permissão nessas regras. O novo código usa `historicoChat`; não exige publicar regras para adicionar outro caminho.
 
-O cadastro existente ainda consulta duplicidade de e-mail, telefone e CPF. Essas consultas e a criação inicial do perfil precisam das regras já usadas pelo projeto; este fragmento não concede acesso público a perfis para viabilizá-las.
+`database.rules.fragment.json` é um fragmento opcional de regras por UID e validação do formato, com as regras de vínculo existentes. Não é substituto completo das regras em produção e não foi publicado. Permissões amplas em um nó ancestral continuam valendo e não são restringidas por regras filhas. Preserve regras de cadastro, consultas, alertas, logs e demais recursos ao integrar qualquer fragmento. Esta alteração não modifica as permissões do banco ativo nem migra registros de outros formatos/caminhos.
 
-Referência: [regras do Realtime Database](https://firebase.google.com/docs/database/security) e [transações no Android](https://firebase.google.com/docs/database/android/read-and-write#save_data_as_transactions).
+## Vínculos
 
-## Configuração da IA
+- `usuarios/pais/{uid}` e `usuarios/filhos/{uid}` usam o UID do Authentication.
+- `usuarios/filhos/{uid}/idResponsavel` contém o UID do responsável.
+- O vínculo pode ser iniciado por qualquer uma das duas contas e não substitui um responsável já associado.
+- Contas antigas baseadas em e-mail precisam de migração própria; o app não associa contas por suposição.
 
-O Chatbox usa o mesmo backend Gemini das análises do app, definido em `GeminiConfig.getBackendUrl()`. Envia um POST com o campo `mensagem`, contendo as instruções do Chatbox e até 40 mensagens recentes. O modelo e a credencial são os configurados nesse backend; não é necessário configurar OpenRouter nem copiar chaves da pasta `chatbox`. As configurações de acesso direto ao Gemini usadas em outras partes do app permanecem inalteradas.
+## Verificação manual
 
-Respostas de erro HTTP, erros JSON e conteúdo vazio ou HTML geram uma opção de nova tentativa, sem serem gravados como falas da IA. A persistência continua usando o Firebase Authentication e o Realtime Database do app.
+1. Entrar na conta de um jovem, abrir Chatbox e enviar uma mensagem fictícia. A conversa deve funcionar sem gravar no banco enquanto a tela estiver aberta.
+2. Girar a tela e reiniciar o app: verificar mensagens e rascunho recuperados do aparelho.
+3. Sair usando **Voltar**. Conferir a sessão em `historicoChat/{uid}/{data}/{id}` e, ao reabrir, acessar **Histórico por data**.
+4. Sair, reabrir e continuar: deve recuperar mensagens e rascunho, sem nova abertura. Ao sair de novo, o mesmo ID no banco deve conter as mensagens novas sem duplicação.
+5. Desligar a rede antes de sair, aguardar o aviso e escolher a cópia local. Reabrir, verificar a indicação de pendência, religar a rede e sair novamente. Conferir que não há duplicação.
+6. Sair enquanto uma resposta está sendo gerada: a mensagem do jovem deve ser preservada, sem resposta tardia após o encerramento.
+7. Conferir uma abertura contextual com dados de uso fictícios. Dados ausentes ou negados devem permitir a abertura geral.
 
-## Verificação manual com contas de teste
+## Validação
 
-1. Criar um jovem deixando o ID do responsável vazio; abrir **Vincular responsável pelo ID** e copiar seu ID.
-2. Na conta do responsável, abrir **Vincular contas pelo ID**, colar o ID do jovem e vincular. Conferir a atualização em **Meus filhos**, inclusive se a lista estiver aberta em outro dispositivo.
-3. Com outro jovem sem vínculo, fazer o caminho inverso: informar o ID do responsável na conta do jovem. Repetir o vínculo para conferir a operação idempotente.
-4. Testar próprio ID, ID inexistente, e-mail, espaços externos, conta de perfil errado e jovem já vinculado a outro responsável. Os erros devem aparecer sem alterar o vínculo existente.
-5. Abrir Chatbox e conferir que a mensagem do dia aparece mesmo sem acesso de leitura ao histórico. Com permissões de gravação configuradas, enviar uma mensagem fictícia e conferir mensagens e timestamps em `chatbox/{uid}/mensagens`. Sair da tela e reabrir: deve aparecer uma nova abertura, sem mensagens anteriores.
-6. Testar interrupção da rede, erro da API e rotação. Tentar novamente durante a sessão não deve duplicar mensagens. Encerrar o processo e reabrir deve iniciar uma conversa nova, preservando os registros já salvos no banco.
-7. No emulador ou simulador de regras do Firebase, conferir que outra conta não lê/escreve o chat, que um responsável não substitui outro e que a consulta de filhos sem filtro é recusada.
+Compilação debug e 35 testes passaram. Os testes automatizados simulam o Firebase e o disco e verificam serialização JSON, persistência local, recuperação, envio ao sair, idempotência, troca de conta, seleção do contexto e falhas de rede. A confirmação do banco ativo exige o roteiro manual com uma conta de teste.
 
-Contas antigas cuja chave seja e-mail, ou que tenham somente `emailResponsavel`, precisam ser migradas para UIDs com credenciais administrativas e backup, ou ter o vínculo refeito na tela quando já possuírem perfil sob UID. O app não faz migração automática baseada em e-mails, para não atribuir filhos à conta errada.
+Comandos: `./gradlew.bat :app:testDebugUnitTest :app:assembleDebug`.
 
-## Validação realizada nesta alteração
+Neste Windows, use o Java do Android Studio. Se houver falha de sockets Unix no Gradle, a configuração local de teste já usada foi `JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=C:\Users\Workstation\AndroidStudioProjects\Supervisionador\gradlew.bat`, para forçar fallback para TCP sem alterar configurações globais.
 
-- `:app:assembleDebug`: passou; APK em `app/build/outputs/apk/debug/app-debug.apk`.
-- `:app:testDebugUnitTest`: 17 testes passaram (4 do contrato do backend Gemini, 9 do fluxo de chat e persistência, 3 de vínculo e 1 teste já existente). Os testes de persistência usam armazenamento em memória; não comprovam permissões no Firebase ativo.
-- Backend Gemini: uma mensagem fictícia de conectividade retornou HTTP 200 com o campo `resposta`, em 13/10/2026. Nenhuma conversa real foi enviada nessa verificação.
-- JSON das regras e XMLs de recursos: sintaxe verificada.
-- `:app:lintDebug`: não concluído. O download de `com.android.tools.external.com-intellij:kotlin-compiler:31.7.3` ficou sem avançar, e o artefato não está disponível no cache para rodar offline.
-- Sem validação de ponta a ponta com contas reais, sem publicação de regras e sem migração de dados no banco ativo.
+## Análise solicitada pelo responsável
 
-Neste Windows, o Java do Android Studio apresentou falha ao conectar sockets Unix usados pelo Gradle. A compilação foi executada com `JAVA_HOME` apontando para o `jbr` do Android Studio e `JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=C:\Users\Workstation\AndroidStudioProjects\Supervisionador\gradlew.bat`. Apontar essa propriedade para um arquivo existente força o fallback de sockets Unix para TCP local. Esse ajuste foi usado somente no processo de compilação, sem alterar as configurações globais do sistema.
+A pergunta na tela inicial do pai e o botão **Gerar relatório com Gemini** do relatório individual usam `ParentAnalysisRepository`. O responsável autenticado e o vínculo `usuarios/filhos/{uid}/idResponsavel` são verificados antes de ler os dados e novamente antes de transmiti-los ao Gemini. O relatório individual não inclui outros jovens. Não são enviados CPF, telefone, e-mail ou senha no contexto.
+
+O contexto reúne `historicoUso/{uid}` (valores em minutos) e `historicoChat/{uid}`, consultando até 30 datas e até 100 mensagens recentes por jovem. Falas do jovem e da IA têm rótulos diferentes. Textos longos são limitados a 2.000 caracteres por mensagem e o contexto total tem orçamento de tamanho, com indicação de abreviação. Falhas de leitura são explicitadas no prompt; não são tratadas como ausência de conversas. Mensagens ainda somente no aparelho não entram no relatório.
+
+As regras compartilhadas pelo usuário já permitem a leitura autenticada nesses caminhos. O fragmento opcional foi atualizado para contemplar a leitura do histórico pelo responsável vinculado, além do próprio jovem; não foi publicado no banco ativo.
+
+## Validação de cadastro
+
+`RegistrationValidation` verifica os dois dígitos verificadores do CPF, rejeita todos os dígitos repetidos e aceita a máscara padrão. O telefone aceita 10 ou 11 números com DDD, com ou sem máscara e +55 opcional. Os mesmos critérios são aplicados nas telas de cadastro e no DAO antes de qualquer criação no Authentication. São validações locais; não consultam a situação cadastral do CPF nem a existência da linha.

@@ -1,17 +1,14 @@
 package com.fabio.eagleeyes.pai.home
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.fabio.eagleeyes.usuario.Usuario
 import com.fabio.eagleeyes.repositorio.AnaliseRepositorio
-import com.fabio.eagleeyes.global.FirebaseConfig
 import com.fabio.eagleeyes.viewmodel.HomeViewModel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.tasks.await
 
 class HomePaiViewModel(
     private val repository: HomePaiRepository,
@@ -62,79 +59,24 @@ class HomePaiViewModel(
         }
     }
 
+    private val parentAnalysis = com.fabio.eagleeyes.pai.ParentAnalysisRepository()
+    private var analysisJob: Job? = null
+
     fun analisarComportamentoComIA(pergunta: String) {
-        val filhos = _listaFilhos.value
-        if (filhos.isNullOrEmpty()) {
-            _erro.value = "Nenhum filho cadastrado para analisar."
-            return
-        }
-
-        viewModelScope.launch {
+        if (analysisJob?.isActive == true || pergunta.isBlank()) return
+        analysisJob = viewModelScope.launch {
             _carregando.value = true
+            _erro.value = ""
             try {
-                val resumoUso = coletarResumoUsoFilhos(filhos)
-                val promptFinal = """
-                    Você é o assistente EagleEyes.
-                    Dados de uso do(s) filho(s):
-                    $resumoUso
-
-                    Pergunta do responsável: $pergunta
-
-                    Responda de forma curta e prática.
-                """.trimIndent()
-
-                Log.d("IA_DEBUG", "Enviando prompt: $promptFinal")
-
-                realizarAnaliseComIAParaPai(promptFinal)
-            } catch (e: Exception) {
-                _erro.value = "Erro na análise: ${e.message}"
+                _respostaIA.value = parentAnalysis.analyze(pergunta.trim())
+            } catch (error: CancellationException) {
+                if (error !is kotlinx.coroutines.TimeoutCancellationException) throw error
+                _erro.value = "O banco demorou para responder. Tente novamente."
+            } catch (error: Exception) {
+                _erro.value = "Erro na análise: ${error.message}"
             } finally {
                 _carregando.value = false
             }
-        }
-    }
-
-    private suspend fun coletarResumoUsoFilhos(filhos: List<Usuario>): String {
-        val builder = StringBuilder()
-
-        for (filho in filhos) {
-            if (filho.uid.isEmpty()) continue
-
-            try {
-                val snapshot = FirebaseConfig.getFilhosRef()
-                    .child(filho.uid)
-                    .child("historicoUso")
-                    .get()
-                    .await()
-
-                if (snapshot.exists()) {
-                    builder.append("Filho(a) ${filho.nome}:\n")
-                    snapshot.children.forEach { diaSnapshot ->
-                        val data = diaSnapshot.key ?: "Data desconhecida"
-                        val tempoTotalDia = diaSnapshot.children.sumOf { appSnapshot ->
-                            appSnapshot.value as? Long ?: 0L
-                        }
-                        builder.append("- $data: ${formatarTempo(tempoTotalDia)}\n")
-                    }
-                    builder.append("\n")
-                } else {
-                    builder.append("Filho(a) ${filho.nome}: Sem dados.\n\n")
-                }
-            } catch (e: Exception) {
-                builder.append("Filho(a) ${filho.nome}: Erro ao carregar.\n\n")
-            }
-        }
-        return builder.toString().ifEmpty { "Nenhum dado disponível." }
-    }
-
-    private fun formatarTempo(millis: Long): String {
-        val segundos = millis / 1000
-        val horas = segundos / 3600
-        val minutos = (segundos % 3600) / 60
-        return when {
-            horas > 0 -> "$horas h $minutos min"
-            minutos > 0 -> "$minutos min"
-            else -> "< 1 min"
         }
     }
 }

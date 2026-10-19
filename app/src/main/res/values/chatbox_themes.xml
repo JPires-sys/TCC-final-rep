@@ -1,8 +1,12 @@
 <resources>
-    <style name="Base.Theme.Chatbox" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.Chatbox" parent="Theme.Material3.Light.NoActionBar">
         <item name="colorPrimary">@color/chat_primary</item>
         <item name="colorOnPrimary">@color/chat_on_primary</item>
         <item name="colorSurface">@color/chat_surface</item>
+        <item name="colorOnSurface">@color/chat_text</item>
+        <item name="colorSecondary">@color/chat_primary</item>
+        <item name="colorPrimaryContainer">@color/chat_soft</item>
+        <item name="colorOnPrimaryContainer">@color/chat_primary</item>
         <item name="android:colorBackground">@color/chat_background</item>
         <item name="android:windowBackground">@color/chat_background</item>
         <item name="android:fontFamily">sans</item>

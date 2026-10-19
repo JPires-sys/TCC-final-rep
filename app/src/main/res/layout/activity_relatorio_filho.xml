@@ -91,6 +91,22 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGerarRelatorioIA"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Gerar relatório com Gemini"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone" />
+            <TextView
+                android:id="@+id/txtContextoRelatorio"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="A análise considera o tempo de tela e as conversas salvas no Chatbox (até 100 mensagens recentes entre as últimas 30 datas)."
+                android:layout_marginBottom="16dp"
+                android:textColor="#475569"
+                android:visibility="gone" />
+
             <androidx.cardview.widget.CardView
                 android:id="@+id/cardRespostaIA"
                 android:layout_width="match_parent"

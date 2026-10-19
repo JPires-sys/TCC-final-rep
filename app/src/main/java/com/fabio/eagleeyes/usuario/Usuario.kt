@@ -18,8 +18,10 @@ open class Usuario(
             email.isEmpty() -> "Email vazio!"
             !email.contains("@") -> "Email inválido!"
             senha.length < 6 -> "Senha muito curta!"
-            telefone.length < 11 -> "Telefone inválido!"
-            cpf.length < 11 -> "CPF inválido!"
+            com.fabio.eagleeyes.cadastro.RegistrationValidation.phoneError(telefone) != null ->
+                com.fabio.eagleeyes.cadastro.RegistrationValidation.phoneError(telefone)
+            com.fabio.eagleeyes.cadastro.RegistrationValidation.cpfError(cpf) != null ->
+                com.fabio.eagleeyes.cadastro.RegistrationValidation.cpfError(cpf)
             else -> null
         }
     }

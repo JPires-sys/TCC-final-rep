@@ -14,6 +14,7 @@ import com.fabio.eagleeyes.databinding.ActivityRelatorioFilhoBinding
 import com.fabio.eagleeyes.filho.detalhes.DetalhesFilhoViewModel
 import com.fabio.eagleeyes.viewmodel.AnaliseViewModel
 import com.fabio.eagleeyes.funcionalidades.historico.HistoricoAdapter
+import com.fabio.eagleeyes.global.FirebaseConfig
 
 class RelatorioFilhoActivity : AppCompatActivity() {
 
@@ -50,6 +51,19 @@ class RelatorioFilhoActivity : AppCompatActivity() {
 
         setupRecyclerView()
         setupObservers()
+
+        val responsavel = FirebaseConfig.getAuth().currentUser?.uid?.let { it != uidFilho } == true
+        binding.btnGerarRelatorioIA.visibility = if (responsavel && uidFilho.isNotBlank()) View.VISIBLE else View.GONE
+        binding.txtContextoRelatorio.visibility = binding.btnGerarRelatorioIA.visibility
+        binding.btnGerarRelatorioIA.setOnClickListener { viewModelIA.gerarRelatorio(uidFilho) }
+        viewModelIA.carregando.observe(this) { loading ->
+            binding.progressBarHistorico.visibility = if (loading) View.VISIBLE else View.GONE
+            binding.btnGerarRelatorioIA.isEnabled = !loading
+        }
+        viewModelIA.respostaIA.observe(this) { response ->
+            binding.cardRespostaIA.visibility = View.VISIBLE
+            binding.txtRespostaIA.text = response
+        }
 
         if (uidFilho.isNotEmpty()) {
             viewModelDetalhes.carregarHistorico(uidFilho)

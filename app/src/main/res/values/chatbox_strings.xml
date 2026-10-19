@@ -2,7 +2,9 @@
     <string name="chatbox_app_name">Chatbox</string>
     <string name="chatbox_tagline">Um espaço para conversar</string>
     <string name="chatbox_welcome_title">Pode chegar.\nNo seu tempo.</string>
-    <string name="chatbox_welcome_body">Seu dia, suas ideias ou o que estiver sentindo. A conversa fica salva na sua conta. As mensagens são enviadas ao provedor de IA para gerar respostas.</string>
+    <string name="chatbox_welcome_body">Seu dia, suas ideias ou o que estiver sentindo. A conversa é guardada neste aparelho e enviada à sua conta ao sair. As respostas são geradas por IA.</string>
+    <string name="chatbox_view_history">Histórico por data</string>
+    <string name="chatbox_saving">Salvando conversa na sua conta…</string>
     <string name="chatbox_ai_label">CHATBOX · IA</string>
     <string name="chatbox_history">SUA CONVERSA</string>
     <string name="chatbox_input_hint">Escreva do seu jeito…</string>
@@ -12,6 +14,6 @@
     <string name="chatbox_retry">Tentar novamente</string>
     <string name="chatbox_disclaimer">Você conversa com uma IA. Este espaço não substitui apoio profissional.</string>
     <string name="chatbox_about">Sobre este espaço</string>
-    <string name="chatbox_about_body">O Chatbox é uma IA para conversar e oferecer apoio emocional. Ele pode errar e não faz diagnósticos nem substitui um psicólogo.\n\nAo abrir, você recebe uma nova mensagem para o dia, sem carregar conversas anteriores. Quando você envia uma mensagem, a conversa é salva no Firebase, associada à sua conta.\n\nSuas mensagens são enviadas ao serviço Gemini do app para gerar respostas. Evite compartilhar dados que identifiquem você ou outras pessoas.\n\nSe precisar de apoio, procure uma pessoa de confiança ou um profissional. Em perigo imediato, busque ajuda presencial e o serviço de emergência da sua região. O app não monitora emergências nem aciona ajuda por você.</string>
+    <string name="chatbox_about_body">O Chatbox é uma IA para conversar e oferecer apoio emocional. Ele pode errar e não faz diagnósticos nem substitui um psicólogo.\n\nA conversa é guardada no aparelho enquanto você conversa. Ao tocar em Voltar ou usar o botão de voltar do Android, ela é enviada ao banco e organizada pela data em que começou. Se o envio falhar, a cópia local fica pendente para a próxima tentativa. Ao voltar, você continua a mesma conversa. Você também pode consultar os registros em Histórico por data. Quando o responsável vinculado pede uma análise ou relatório, as conversas salvas podem ser enviadas ao Gemini como contexto dessa análise.\n\nA mensagem do dia é reutilizada no mesmo dia neste aparelho. De vez em quando, o tempo de tela registrado na sua conta ajuda a sugerir uma pergunta sobre seus interesses. Esse resumo e suas mensagens são enviados ao serviço Gemini do app para gerar respostas. Evite compartilhar dados que identifiquem você ou outras pessoas.\n\nSe precisar de apoio, procure uma pessoa de confiança ou um profissional. Em perigo imediato, busque ajuda presencial e o serviço de emergência da sua região. O app não monitora emergências nem aciona ajuda por você.</string>
     <string name="chatbox_close">Entendi</string>
 </resources>

@@ -52,7 +52,7 @@ abstract class CadastroActivity<T : ViewBinding> : AppCompatActivity() {
                 Validator.validarEmail(campos.layoutEmail) &&
                 Validator.validarSenha(campos.layoutSenha) &&
                 Validator.validarCPF(campos.layoutCPF) &&
-                Validator.validarCampoVazio(campos.layoutTelefone)
+                Validator.validarTelefone(campos.layoutTelefone)
     }
 
     protected open fun setupObservers() {

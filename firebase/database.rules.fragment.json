@@ -2,18 +2,31 @@
   "rules": {
     "usuarios": {
       "pais": {
-        ".indexOn": ["email", "telefone", "cpf"],
+        ".indexOn": [
+          "email",
+          "telefone",
+          "cpf"
+        ],
         "$uid": {
           ".read": "auth != null && auth.uid == $uid",
-          "nome": { ".read": "auth != null" }
+          "nome": {
+            ".read": "auth != null"
+          }
         }
       },
       "filhos": {
-        ".indexOn": ["idResponsavel", "email", "telefone", "cpf"],
+        ".indexOn": [
+          "idResponsavel",
+          "email",
+          "telefone",
+          "cpf"
+        ],
         ".read": "auth != null && root.child('usuarios/pais').child(auth.uid).exists() && query.orderByChild == 'idResponsavel' && query.equalTo == auth.uid",
         "$uid": {
           ".read": "auth != null && (auth.uid == $uid || data.child('idResponsavel').val() == auth.uid)",
-          "nome": { ".read": "auth != null" },
+          "nome": {
+            ".read": "auth != null"
+          },
           "idResponsavel": {
             ".read": "auth != null",
             ".write": "auth != null && root.child('usuarios/filhos').child($uid).exists() && newData.isString() && root.child('usuarios/pais').child(newData.val()).exists() && (auth.uid == $uid || auth.uid == newData.val()) && (!data.exists() || data.val() == '' || data.val() == newData.val())",
@@ -22,18 +35,49 @@
         }
       }
     },
-    "chatbox": {
+    "historicoChat": {
       "$uid": {
-        ".read": "auth != null && auth.uid == $uid && root.child('usuarios/filhos').child($uid).exists()",
-        "mensagens": {
-          "$messageId": {
-            ".write": "auth != null && auth.uid == $uid && root.child('usuarios/filhos').child($uid).exists() && newData.exists() && (!data.exists() || (newData.child('id').val() == data.child('id').val() && newData.child('role').val() == data.child('role').val() && newData.child('content').val() == data.child('content').val() && newData.child('createdAt').val() == data.child('createdAt').val()))",
-            ".validate": "newData.hasChildren(['id', 'role', 'content', 'createdAt'])",
-            "id": { ".validate": "newData.isString() && newData.val() == $messageId" },
-            "role": { ".validate": "newData.val() == 'user' || newData.val() == 'assistant'" },
-            "content": { ".validate": "newData.isString() && newData.val().length > 0 && ((newData.parent().child('role').val() == 'user' && newData.val().length <= 4000) || (newData.parent().child('role').val() == 'assistant' && newData.val().length <= 32000))" },
-            "createdAt": { ".validate": "newData.isNumber() && newData.val() <= now" },
-            "$other": { ".validate": false }
+        ".read": "auth != null && (auth.uid == $uid || (root.child('usuarios/pais').child(auth.uid).exists() && root.child('usuarios/filhos').child($uid).child('idResponsavel').val() == auth.uid))",
+        "$date": {
+          "$sessionId": {
+            ".write": "auth != null && auth.uid == $uid && newData.exists()",
+            ".validate": "newData.hasChildren(['id', 'date', 'startedAt', 'endedAt', 'mensagens'])",
+            "id": {
+              ".validate": "newData.isString() && newData.val() == $sessionId"
+            },
+            "date": {
+              ".validate": "newData.isString() && newData.val() == $date && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)"
+            },
+            "startedAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "endedAt": {
+              ".validate": "newData.isNumber() && newData.val() >= newData.parent().child('startedAt').val()"
+            },
+            "mensagens": {
+              ".validate": "newData.hasChildren()",
+              "$messageId": {
+                ".validate": "newData.hasChildren(['id', 'role', 'content', 'createdAt'])",
+                "id": {
+                  ".validate": "newData.isString() && newData.val() == $messageId"
+                },
+                "role": {
+                  ".validate": "newData.val() == 'user' || newData.val() == 'assistant'"
+                },
+                "content": {
+                  ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 32000"
+                },
+                "createdAt": {
+                  ".validate": "newData.isNumber() && newData.val() > 0"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              }
+            },
+            "$other": {
+              ".validate": false
+            }
           }
         }
       }

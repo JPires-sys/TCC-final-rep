@@ -56,7 +56,7 @@
         style="@style/Widget.EagleEyes.TextInputLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Telefone">
+        android:hint="Telefone com DDD (10 ou 11 dígitos)">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/edtTelefone"

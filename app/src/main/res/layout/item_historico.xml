@@ -1,35 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_marginHorizontal="8dp"
-    android:layout_marginVertical="4dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="2dp">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="12dp">
-
-        <TextView
-            android:id="@+id/txtDadosBrutos"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Atividade detectada..."
-            android:textColor="@android:color/black"
-            android:textSize="16sp" />
-
-        <TextView
-            android:id="@+id/txtTimeStamp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="Data e hora"
-            android:textColor="@android:color/darker_gray"
-            android:textSize="12sp" />
-
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:layout_marginVertical="5dp"
+    app:cardBackgroundColor="@color/white" app:cardCornerRadius="18dp" app:cardElevation="0dp"
+    app:strokeColor="@color/slate_200" app:strokeWidth="1dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical" android:padding="16dp">
+        <ImageView android:id="@+id/imgHistoricoApp" android:layout_width="48dp" android:layout_height="48dp"
+            android:padding="5dp" android:scaleType="fitCenter" android:background="@drawable/bg_home_icon"
+            android:src="@drawable/ic_app_placeholder" android:importantForAccessibility="no" />
+        <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+            android:orientation="vertical" android:layout_marginStart="14dp">
+            <TextView android:id="@+id/txtDadosBrutos" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="@color/slate_900" android:textSize="16sp" android:fontFamily="sans-serif-medium" />
+            <TextView android:id="@+id/txtTimeStamp" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="5dp" android:textColor="@color/slate_500" android:textSize="13sp" />
+        </LinearLayout>
     </LinearLayout>
-</androidx.cardview.widget.CardView>
+</com.google.android.material.card.MaterialCardView>

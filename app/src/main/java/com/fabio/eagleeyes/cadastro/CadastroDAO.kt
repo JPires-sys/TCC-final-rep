@@ -17,6 +17,8 @@ class CadastroDAO {
      * Salva um usuário do tipo Pai no Auth e no Database com verificação de segurança.
      */
     suspend fun salvarUsuarioPai(usuario: UsuarioPai, noDestino: String): Boolean {
+        usuario.cpf = RegistrationValidation.cpfDigits(usuario.cpf)
+        usuario.telefone = RegistrationValidation.validatedPhone(usuario.telefone)
         val emailFormatado = usuario.email.lowercase().trim()
         val senhaPura = usuario.senha
 
@@ -57,6 +59,8 @@ class CadastroDAO {
      * Salva um usuário do tipo Filho no Auth e no Database com verificação de segurança.
      */
     suspend fun salvarUsuarioFilho(usuario: UsuarioFilho, noDestino: String): Boolean {
+        usuario.cpf = RegistrationValidation.cpfDigits(usuario.cpf)
+        usuario.telefone = RegistrationValidation.validatedPhone(usuario.telefone)
         val emailFormatado = usuario.email.lowercase().trim()
         val senhaPura = usuario.senha
 
